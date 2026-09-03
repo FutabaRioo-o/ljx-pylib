@@ -1,0 +1,124 @@
+一、目录要求
+
+保持以下相对位置：
+
+ljx_test/
+└─ ljx_pylib/
+   └─ PYTHON/
+      ├─ 一体化上位机界面V3.html
+      ├─ hmi_server.py
+      ├─ hmi_bridge.js
+      ├─ main_controller.py
+      ├─ workflow_controller.py
+      ├─ integrated_hmi_config.json
+      ├─ read_ljx_status.py
+      ├─ read_one_profile.py
+      ├─ read_moving_profiles.py
+      ├─ LJXAwrap.py
+      └─ libljxacom.so
+
+二、安装依赖
+
+cd ~/Desktop/ljx_test/ljx_pylib/PYTHON
+python3 -m pip install -r requirements_hmi.txt
+
+三、启动
+
+python3 hmi_server.py --host 0.0.0.0
+
+浏览器打开：
+http://192.168.4.1:8000
+
+当前部署网络：
+
+树莓派：192.168.4.1
+平板：192.168.4.100
+
+平板与树莓派位于同一 Wi-Fi 网段时，平板打开：
+http://192.168.4.1:8000
+
+四、数据目录
+
+单帧数据：~/Desktop/LJX轮廓数据
+连续采集：~/Desktop/LJX上位机数据
+
+五、当前绑定
+
+1. 总览与任务准备 -> 激光控制器
+   每 3 秒调用 read_ljx_status.py。
+   检测成功显示正常，连接失败或超时显示异常。
+
+2. 单点调试 -> 激光扫描模块 -> 单帧读取
+   调用 read_one_profile.py，完成后显示有效点数。
+
+3. 单点调试 -> 激光扫描模块 -> 连续采集
+   后台运行 read_moving_profiles.py。
+   默认采集 100 条，超时 15 秒，保存间隔 0.1 秒。
+
+4. 单点调试 -> 激光扫描模块 -> 停止采集
+   停止当前连续采集进程。
+
+按钮固定 ID：
+单帧读取：laser-single-read
+连续采集：laser-continuous-start
+停止采集：laser-continuous-stop
+
+前端 HTML 已固定引用 ./hmi_bridge.js。硬件按钮必须通过
+http://127.0.0.1:8000 打开；直接双击 HTML 时没有 Python API，
+因此不能执行真实激光指令。
+
+六、环境变量
+
+指定其他 HTML：
+export LJX_HMI_HTML=/绝对路径/一体化上位机界面V3.html
+
+指定连续采集数据目录：
+export LJX_HMI_DATA_DIR=/绝对路径/数据目录
+
+七、整机控制（由 PC_MAIN 迁移）
+
+PC_MAIN 的 TCP 控制、三类电机、两路继电器、姿态/电量上报、
+校准参数和数学工具已迁入本目录。网页直接复用现有的“连接设备”、
+A/B/C 电机、急停/正常停止、冲击枪继电器和 IMU 状态控件，不使用
+第二套面板。
+
+运行前编辑 integrated_hmi_config.json：
+
+1. 在 main_controller 中填写整机控制板 Wi-Fi IP 和端口。
+2. 将 enabled 改为 true。
+3. 根据机械实际标定 motion 中的 a_position_scale、
+   b_steps_per_unit、c_steps_per_unit；不要保留默认 1.0 后直接驱动设备。
+
+旧协议兼容格式：
+
+AA + 功能码 + 参数（补零到 14 字节） + FF，共 16 字节。
+
+B1 为两路继电器；B2/B3 为推杆电机 1/2；B4 为 RS485 电机位置；
+B5 为 RS485 电机转速；B6 为 RS485 电机停止/恢复；01 为姿态和电池上报。
+
+旧 PC_MAIN 协议中没有推杆独立停止、推杆回原点、设零的功能码，
+现有页面点击这些按钮会给出提示，不会发送不匹配的控制报文。
+
+八、导入旧 Access 校准数据（一次性）
+
+在可读取旧 DataBase.mdb 的 Windows 电脑上，将 Table_Measurement
+导出为 UTF-8 CSV，保留列：通道、系数用途、通道增益、通道漂移。
+复制到树莓派后执行：
+
+python3 migrate_pc_main.py --calibration-csv Table_Measurement.csv
+
+数据会写入 data/integrated_hmi.sqlite3；新的 HMI 不再依赖 Access 或
+Windows 专属的网卡设置功能。
+
+九、自动任务（复用现有页面按钮）
+
+“开始自检”会检查 PCB 通信是否已连接；“开始扫描任务”按工作流程
+先运行 B/C 推杆定位，再设置 A 轴转速和目标位置，最后启动树莓派的
+连续激光采集。“启动应力消除”先定位 B/C，再开启两路冲击枪继电器。
+
+“正常停止”和“急停”都会执行安全停机：发送 A 轴停止、关闭继电器 1/2、
+停止树莓派上的连续激光采集，并取消仍在等待启动的自动任务。
+
+workflow 的默认目标位置、B/C 脉冲、启动等待时间及激光采集参数位于
+integrated_hmi_config.json。B/C 旧协议没有实际位置或动作完成反馈，因此
+页面显示的是程序估算脉冲位置；首次实机运行前必须按机械行程设置这些值。

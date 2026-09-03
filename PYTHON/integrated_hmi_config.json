@@ -1,0 +1,42 @@
+{
+  "network": {
+    "raspberry_pi_ip": "192.168.4.1",
+    "tablet_ip": "192.168.4.100",
+    "hmi_host": "0.0.0.0",
+    "hmi_port": 8000
+  },
+  "main_controller": {
+    "enabled": false,
+    "host": "",
+    "port": 1200,
+    "mode": "client",
+    "connect_timeout_seconds": 2.0,
+    "protocol": "legacy-16-byte-aa-function-payload-ff"
+  },
+  "measurement": {
+    "scale_k": 0.0004,
+    "offset_b": -330.94,
+    "limit": 50000,
+    "precision": 1,
+    "unit": "g"
+  },
+  "motion": {
+    "a_position_scale": 1.0,
+    "b_steps_per_unit": 1.0,
+    "c_steps_per_unit": 1.0,
+    "b_default_speed": 8000,
+    "c_default_speed": 8000
+  },
+  "workflow": {
+    "startup_wait_seconds": 1.0,
+    "a_target_position": 180,
+    "a_speed": 30000,
+    "b_scan_steps": 0,
+    "c_scan_steps": 0,
+    "b_stress_steps": 0,
+    "c_stress_steps": 0,
+    "scan_profiles": 100,
+    "scan_timeout_seconds": 15.0,
+    "scan_sample_interval_seconds": 0.1
+  }
+}

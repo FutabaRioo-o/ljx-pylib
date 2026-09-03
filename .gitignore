@@ -1,0 +1,38 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# Build / IDE
+*.o
+*.obj
+*.so
+!PYTHON/libljxacom.so
+obj/
+build/
+dist/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local redistributables (large, re-downloadable)
+runtime/vc_redist.x64.exe
+
+# Backups
+*.bak
+*.bak_*
